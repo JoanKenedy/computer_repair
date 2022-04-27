@@ -21,10 +21,10 @@ const getRepairById = async (req, res) => {
 
     const repair = await Repair.findOne({ where: { id } });
 
-    if (!repair) {
+    if (repair.status !== 'pending') {
       return res.status(404).json({
         status: 'error',
-        message: 'User not found given that id',
+        message: 'the computer is no longer pending',
       });
     }
 
@@ -44,10 +44,10 @@ const updateRepair = async (req, res) => {
     // const user = await User.update({ name, email }, { where: { id: id } });
     const repair = await Repair.findOne({ where: { id } });
 
-    if (!repair) {
+    if (repair.status !== 'pending') {
       return res.status(404).json({
         status: 'error',
-        message: 'User not found given that id',
+        message: 'the computer is no longer pending',
       });
     }
     await repair.update({ status: 'completed' });
@@ -64,10 +64,10 @@ const deleteRepair = async (req, res) => {
 
     const repair = await Repair.findOne({ where: { id } });
 
-    if (!repair) {
+    if (repair.status !== 'pending') {
       return res.status(404).json({
         status: 'error',
-        message: 'User not found given that id',
+        message: 'the computer is no longer pending',
       });
     }
     // Soft delete
