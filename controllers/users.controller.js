@@ -79,7 +79,7 @@ const deleteUser = async (req, res) => {
       });
     }
     // Soft delete
-    await user.update({ status: 'deleted' });
+    await user.update({ status: 'disable' });
 
     res.status(200).json({
       status: 'success',
