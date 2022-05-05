@@ -1,6 +1,14 @@
 const express = require('express');
+const { body } = require('express-validator');
 
 const router = express.Router();
+
+//Middlewares
+
+const { userExists } = require('../middlewares/users.middlewares');
+const {
+  createUserValidator,
+} = require('../middlewares/userValidator.middleware');
 
 // Controller
 const {
@@ -13,12 +21,12 @@ const {
 
 router.get('/', getAllUsers);
 
-router.post('/', createUser);
+router.post('/', createUserValidator, createUser);
 
-router.get('/:id', getUserById);
+router.get('/:id', userExists, getUserById);
 
-router.patch('/:id', updateUser);
+router.patch('/:id', userExists, updateUser);
 
-router.delete('/:id', deleteUser);
+router.delete('/:id', userExists, deleteUser);
 
 module.exports = { usersRouter: router };

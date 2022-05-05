@@ -1,85 +1,72 @@
 const { Repair } = require('../models/repair.model');
+const { User } = require('../models/user.model');
+const { validationResult } = require('express-validator');
 
-const getAllRepairs = async (req, res) => {
-  const repairs = await Repair.findAll();
+const { catchAsync } = require('../utils/catchAsync');
+
+const getAllRepairs = catchAsync(async (req, res) => {
+  const repairs = await Repair.findAll({
+    where: { status: 'pending' },
+    include: [{ model: User }],
+  });
+
   res.status(200).json({
     repairs,
   });
-};
+});
 
-const createRepair = async (req, res) => {
-  const { date, userId } = req.body;
-  const newRepair = await Repair.create({ date, userId });
+const createRepair = catchAsync(async (req, res) => {
+  const { userId, date, computerNumber, comments } = req.body;
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    console.log(date);
+    const messages = errors.array().map((error) => {
+      return error.msg;
+    });
+    const errorMsg = messages.join('. ');
+    return res.status(400).json({
+      staus: 'error',
+      message: errorMsg,
+    });
+  }
+
+  const newRepair = await Repair.create({
+    userId,
+    date,
+    computerNumber,
+    comments,
+  });
+
   res.status(201).json({
     newRepair,
   });
-};
+});
 
-const getRepairById = async (req, res) => {
-  try {
-    const { id } = req.params;
+const getRepairById = catchAsync(async (req, res) => {
+  const { repair } = req;
 
-    const repair = await Repair.findOne({ where: { id } });
+  res.status(200).json({
+    repair,
+  });
+});
 
-    if (repair.status !== 'pending') {
-      return res.status(404).json({
-        status: 'error',
-        message: 'the computer is no longer pending',
-      });
-    }
+const updateRepair = catchAsync(async (req, res) => {
+  const { repair } = req;
 
-    res.status(200).json({
-      repair,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
+  await repair.update({ status: 'completed' });
 
-const updateRepair = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+  res.status(200).json({ status: 'success' });
+});
 
-    // const user = await User.update({ name, email }, { where: { id: id } });
-    const repair = await Repair.findOne({ where: { id } });
+const deleteRepair = catchAsync(async (req, res) => {
+  const { repair } = req;
 
-    if (repair.status !== 'pending') {
-      return res.status(404).json({
-        status: 'error',
-        message: 'the computer is no longer pending',
-      });
-    }
-    await repair.update({ status: 'completed' });
+  await repair.update({ status: 'cancelled' });
 
-    res.status(200).json({ status: 'success' });
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const deleteRepair = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const repair = await Repair.findOne({ where: { id } });
-
-    if (repair.status !== 'pending') {
-      return res.status(404).json({
-        status: 'error',
-        message: 'the computer is no longer pending',
-      });
-    }
-    // Soft delete
-    await repair.update({ status: 'cancelled' });
-
-    res.status(200).json({
-      status: 'success',
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
+  res.status(200).json({ status: 'success' });
+});
 
 module.exports = {
   getAllRepairs,

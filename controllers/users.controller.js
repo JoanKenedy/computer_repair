@@ -1,93 +1,67 @@
 const { User } = require('../models/user.model');
+const { validationResult } = require('express-validator');
 
-const getAllUsers = async (req, res) => {
-  try {
-    const users = await User.findAll();
-    res.status(200).json({
-      users,
+//Utils
+
+const { catchAsync } = require('../utils/catchAsync');
+
+const getAllUsers = catchAsync(async (req, res) => {
+  const users = await User.findAll();
+  res.status(200).json({
+    users,
+  });
+});
+
+const createUser = catchAsync(async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const messages = errors.array().map((error) => {
+      return error.msg;
     });
-  } catch (error) {
-    console.log(error);
-  }
-};
 
-const createUser = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
-
-    const newUser = await User.create({ name, email, password, role });
-
-    res.status(201).json({ newUser });
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findOne({ where: { id } });
-
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User not found given that id',
-      });
-    }
-
-    res.status(200).json({
-      user,
+    const errorMsg = messages.join('. ');
+    return res.status(400).json({
+      status: 'error',
+      message: errorMsg,
     });
-  } catch (error) {
-    console.log(error);
   }
-};
 
-const updateUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email } = req.body;
+  const newUser = await User.create({ name, email, password, role });
 
-    // const user = await User.update({ name, email }, { where: { id: id } });
-    const user = await User.findOne({ where: { id } });
+  res.status(201).json({ newUser });
+});
 
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User not found given that id',
-      });
-    }
-    await user.update({ name, email });
+const getUserById = catchAsync(async (req, res) => {
+  const { user } = req;
 
-    res.status(200).json({ status: 'success' });
-  } catch (error) {
-    console.log(error);
-  }
-};
+  res.status(200).json({
+    user,
+  });
+});
 
-const deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
+const updateUser = catchAsync(async (req, res) => {
+  const { user } = req;
+  const { name, email } = req.body;
 
-    const user = await User.findOne({ where: { id } });
+  // const user = await User.update({ name, email }, { where: { id: id } });
 
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User not found given that id',
-      });
-    }
-    // Soft delete
-    await user.update({ status: 'disable' });
+  await user.update({ name, email });
 
-    res.status(200).json({
-      status: 'success',
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
+  res.status(200).json({ status: 'success' });
+});
+
+const deleteUser = catchAsync(async (req, res) => {
+  const { user } = req;
+  // Soft delete
+  await user.update({ status: 'disable' });
+
+  res.status(200).json({
+    status: 'success',
+  });
+});
 
 module.exports = {
   getAllUsers,
